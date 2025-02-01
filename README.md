@@ -29,3 +29,5 @@ Description of each implemented DS placed in this DS folder.
 #### Задание 2
 Реализуйте ассоциативный массив, реализовав необходимое и достаточное количество выполняемых операций и объясните почему.
 
+### Testing
+Both data structures was tested using ```unittest``` framework.
