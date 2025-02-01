@@ -482,12 +482,20 @@ class AVL:
         return False if self._root is None else True
 
     # def _run_merge(self, left: Optional[Node], right: Optional[Node]) -> Optional[Node]:
-    #     if left is None or right is None:
-    #         return left if (left is not None) else right
-    #     if (left.height <= right.height):
-    #         right.left = self._run_merge(left, right.left), self._run_balancing(right)
-    #     else:
-    #         left.right = self._run_merge(left.right, right), self._run_balancing(left)
+    #     if left is None:
+    #         return right
+    #     if right is None:
+    #         return left
+
+    #     left, right = self._run_split(left, right.key)
+
+    #     merged_left  = self._run_merge(left, right.left)
+    #     merged_right = self._run_merge(right, right.right)
+
+    #     new_node = AVL.Node(right.key, merged_left, merged_right)
+    #     self._recalc_height(new_node)
+        
+    #     return self._run_balancing(new_node)
     
     def __add__(self, other: Optional['AVL']) -> Optional['AVL']:
         """+ operator"""
