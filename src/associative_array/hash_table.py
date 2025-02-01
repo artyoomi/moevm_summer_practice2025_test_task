@@ -183,7 +183,7 @@ class HashTable:
 if __name__ == "__main__":
     ht = HashTable()
 
-    ht["key0"] = "value0"
+    ht[['key']] = "value0"
     ht["key1"] = "value1"
 
     for i in range(2, 30):

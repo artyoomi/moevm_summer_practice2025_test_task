@@ -17,9 +17,6 @@ class AVL:
         # Used to access size in O(1)
         self._size = 0
 
-    def __del__(self):
-        self.clear()
-
     #=========================#
     # CLASS INTERFACE METHODS #
     #=========================#
@@ -62,7 +59,7 @@ class AVL:
         
         return max_node.key
 
-    def data(self, order: str) -> List[int]:
+    def data(self, order: str="in") -> List[int]:
         """Get elements of tree in specified order"""
         data = []
         if order == "in":
@@ -85,22 +82,31 @@ class AVL:
         """Count amount elements with key `key` in tree"""
         return self._run_count(self._root, key)
 
-    def split_at(self, key: int) -> (Optional['AVL'], Optional['AVL']):
-        """Splits tree at given key (given key goes to second return value)"""
-        if self._root is None:
-            return None, None
-        
-        new_avl = copy.deepcopy(self)
-        
-        target_node = new_avl._run_search(key)
-        # Tree have no node with key `key`
-        if target_node is None:
-            return new_avl
+    def size(self) -> int:
+        """Return size of tree"""
+        return self._size
 
+    def split(self, key: int) -> (Optional['AVL'], Optional['AVL']):
+        """Splits tree at given key"""
+        avl_copy = copy.deepcopy(self)
         
+        left_tree, right_tree = AVL(), AVL()
+        left, right = self._run_split(avl_copy._root, key)
+
+        # Update root pointers
+        left_tree._root, right_tree._root = left, right
+
+        return (left_tree, right_tree)
+
+    def validate(self):
+        """Validate tree structure"""
+        return self._run_validate_AVL_BST(self._root) and \
+               self._size == len(self.data())
 
     def clear(self) -> None:
         """Empty tree"""
+        self._size = 0
+        self._root = None
         self._run_clear(self._root)
 
     #=======================#
@@ -115,11 +121,16 @@ class AVL:
 
     def _recalc_height(self, node: Node) -> None:
         """Function to recalculate height of specified node"""
+        if node is None:
+            return
+        
         node.height = 1 + max(self._height(node.left),
                               self._height(node.right))
 
     def _calc_bfactor(self, node: Node) -> int:
         """Function to calculate balance factor of current node"""
+        if node is None:
+            return 0
         return self._height(node.right) - self._height(node.left)
 
     def _run_left_rotation(self, rotate_root: Node) -> Node:
@@ -290,7 +301,7 @@ class AVL:
         return found_node
     
     def _run_count(self, node: Optional[Node], key: int) -> int:
-        """Count amount elements with key `key` in tree"""
+        """Count amount of elements with key `key` in tree"""
         count = 0
 
         if node is not None:
@@ -320,10 +331,10 @@ class AVL:
                     count = count + self._run_count(node.right, key)
 
             # Go to the right subtree if key > node.key
-            if node.key < key:
+            elif node.key < key:
                 count = self._run_count(node.right, key)
             # Go to the left subtree if key < node.key
-            if node.key > key:
+            elif node.key > key:
                 count = self._run_count(node.left, key)
 
         return count
@@ -351,6 +362,48 @@ class AVL:
         new_node.right  = self._run_deepcopy(node.right)
 
         return new_node
+
+    def _run_split(self, node: Optional[Node], key: int) -> ('AVL', 'AVL'):
+        """Helper for split tree at given key"""
+        # Base case
+        if node is None:
+            return None, None
+
+        # Target key is in left subtree
+        if key < node.key:
+            left_tree, node.left = self._run_split(node.left, key)
+            node = self._run_balancing(node)
+            return left_tree, node
+        # Target node is in right subtree
+        elif key > node.key:
+            node.right, right_tree = self._run_split(node.right, key)
+            node = self._run_balancing(node)
+            return node, right_tree
+        # Target node was found
+        else:
+            left_tree = node.left
+            right_tree = node.right
+            node.left, node.right = None, None
+            return left_tree, right_tree
+            
+
+    def _run_validate_AVL_BST(self, node: Optional[Node]) -> bool:
+        """Validate BST property"""
+        # Empty tree = correct BST 
+        if node is None:
+            return True
+        # Left child has greater value than parent
+        if node.left is not None and node.key < node.left.key:
+            return False
+        # Right child has less value than parent
+        if node.right is not None and node.key > node.right.key:
+            return False
+        if abs(self._calc_bfactor(node)) >= 2:
+            return False
+
+        # Rescursively check BST structure
+        return self._run_validate_AVL_BST(node.left) and \
+               self._run_validate_AVL_BST(node.right)
     
     def _run_clear(self, node: Optional[Node]) -> None:
         """Clear all tree with root in `node`"""
@@ -359,8 +412,10 @@ class AVL:
         
         self._run_clear(node.left)
         self._run_clear(node.right)
-        node = None
-        
+
+        node.left  = None
+        node.right = None
+        node       = None
 
     #=================#
     # TREE TRAVERSALS #
@@ -422,39 +477,24 @@ class AVL:
 
         return True if found_node is not None else False
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         """Check on True/False"""
         return False if self._root is None else True
 
-    # def _merge_trees(self, first: Optional[Node], second: Optional[Node]) -> Optional[Node]:
-    #     """Merge two trees"""
-
-    #     # Condition to process four possible cases:
-    #     #  1. first is None     and second is None     => return None
-    #     #  2. first is not None and second is None     => return first
-    #     #  3. first is None     and second is not None => return second
-    #     #  4. first is not None and second is not None => continue execution 
-    #     #
-    #     if first is None or second is None:
-    #         return first if second is None else second
-
-    #     if first.key > second.key:
-    #         self._merge_trees(first.left. second)
-    #     elif first.key < second.key:
-    #         self._merge_trees(first.right, second)
+    # def _run_merge(self, left: Optional[Node], right: Optional[Node]) -> Optional[Node]:
+    #     if left is None or right is None:
+    #         return left if (left is not None) else right
+    #     if (left.height <= right.height):
+    #         right.left = self._run_merge(left, right.left), self._run_balancing(right)
     #     else:
-
+    #         left.right = self._run_merge(left.right, right), self._run_balancing(left)
+    
     def __add__(self, other: Optional['AVL']) -> Optional['AVL']:
         """+ operator"""
         new_avl = copy.deepcopy(self)
 
         if other is None:
             return new_avl
-
-        # Get pointers to tree roots
-        # copy_current  = new_avl.raw()
-        # other_current = other.raw()
-        # self._merge_trees(copy_current, other_current)
 
         other_keys = other.data(order="in")
 
@@ -474,22 +514,20 @@ class AVL:
 if __name__ == "__main__":
     avl = AVL()
 
-    for i in range(1, 100):
-        avl.insert(i)
+    avl.insert(10)    
+    avl.insert(20)    
+    avl.insert(5)    
+    avl.insert(15)
+    avl.insert(123)
+    avl.insert(0)
+    avl.insert(1)
+    avl.insert(545)
+    avl.insert(9)
 
-    print(len(avl.data("width")))
 
-    print(5 in avl)
-    print(99 in avl)
-    avl.remove(99)
-    avl.remove(99)
-    avl.remove(25)
-    avl.remove(6)
-    print(99 in avl)
-    
-    
-    print(-10 in avl)
+    left, right = avl.split(15)
 
-    print(copy.deepcopy(avl))
+    print(left.data())
+    print(right.data())
 
-    print(len(avl))
+    print(avl.data())

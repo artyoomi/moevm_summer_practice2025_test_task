@@ -33,10 +33,11 @@ def plot_node(node, x, y, offset, ax, level=1):
 if __name__ == "__main__":
     # Example of tree visualization
     avl = avl.AVL()
-    keys = [50, 50, 30, 70, 20, 40, 60, 80]
+
+    print("Введите натуральные числа (элементы дерева) через пробел:")
+    keys = list(map(int, input().split()))
+
     for key in keys:
         avl.insert(key)
 
-    new_avl = avl + avl + avl + avl + avl + avl
-    
-    plot_tree(new_avl)
+    plot_tree(avl)

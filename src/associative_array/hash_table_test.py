@@ -1,4 +1,4 @@
-from hash_table import *
+from hash_table import HashTable
 import unittest
 
 class TestHashTable(unittest.TestCase):
