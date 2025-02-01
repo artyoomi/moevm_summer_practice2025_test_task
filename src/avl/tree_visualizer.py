@@ -1,5 +1,6 @@
 import avl
 import matplotlib.pyplot as plt
+import copy
 
 
 def plot_tree(avl: avl.AVL) -> None:
@@ -36,4 +37,6 @@ if __name__ == "__main__":
     for key in keys:
         avl.insert(key)
 
-    plot_tree(avl)
+    new_avl = avl + avl + avl + avl + avl + avl
+    
+    plot_tree(new_avl)

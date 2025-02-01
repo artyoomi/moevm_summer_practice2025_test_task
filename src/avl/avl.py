@@ -1,5 +1,6 @@
 from typing import List, Optional
 import queue
+import copy
 
 class AVL:
     class Node:
@@ -82,11 +83,21 @@ class AVL:
 
     def count(self, key: int) -> int:
         """Count amount elements with key `key` in tree"""
-        return self._run_count(self._root, key)        
+        return self._run_count(self._root, key)
 
-    # def generate_DOT_file(self) -> None:
-    #     """Generate .dot format file for visualization"""
-    #     self._generate_DOT_file(self._root)
+    def split_at(self, key: int) -> (Optional['AVL'], Optional['AVL']):
+        """Splits tree at given key (given key goes to second return value)"""
+        if self._root is None:
+            return None, None
+        
+        new_avl = copy.deepcopy(self)
+        
+        target_node = new_avl._run_search(key)
+        # Tree have no node with key `key`
+        if target_node is None:
+            return new_avl
+
+        
 
     def clear(self) -> None:
         """Empty tree"""
@@ -262,15 +273,6 @@ class AVL:
         # return node
         return self._run_remove(max_node, max_node.key)
 
-    def _run_clear(self, node: Optional[Node]) -> None:
-        """Clear all tree with root in `node`"""
-        if node is None:
-            return
-        
-        self._run_clear(node.left)
-        self._run_clear(node.right)
-        node = None
-
     def _run_search(self, node: Optional[Node], key: int) -> Optional[Node]:
         """Function to search node with `key` in AVL tree which root in `node`"""
         if node is None:
@@ -326,7 +328,7 @@ class AVL:
 
         return count
 
-    def _run_count_size(self, node: Node):
+    def _run_count_size(self, node: Node) -> int:
         """Recursively count amount of nodes in tree"""
         if node is None:
             return 0
@@ -337,9 +339,32 @@ class AVL:
 
         return count
 
-    #=========================#
-    # VARIOUS TREE TRAVERSALS #
-    #=========================#
+    def _run_deepcopy(self, node: Optional[Node]) -> Optional[Node]:
+        """Helper method to copy each node recursively"""
+        if node is None:
+            return None
+
+        # Copy current node and recursively copy it's subtrees
+        new_node        = self.Node(key=node.key)
+        new_node.height = node.height
+        new_node.left   = self._run_deepcopy(node.left)
+        new_node.right  = self._run_deepcopy(node.right)
+
+        return new_node
+    
+    def _run_clear(self, node: Optional[Node]) -> None:
+        """Clear all tree with root in `node`"""
+        if node is None:
+            return
+        
+        self._run_clear(node.left)
+        self._run_clear(node.right)
+        node = None
+        
+
+    #=================#
+    # TREE TRAVERSALS #
+    #=================#
     def _get_in_order(self, node: Optional[Node], keys: List[int]) -> None:
         """In order tree traversal"""
         if node is None:
@@ -384,48 +409,6 @@ class AVL:
             if current.right is not None:
                 q.put(current.right)
 
-    #========================#
-    # GENERATE VISUALIZATION #
-    #========================#
-    # def _generate_DOT(self, root: Optional[Node], out) -> None:
-    #     """Helper to generate DOT file"""
-    #     if root is None:
-    #         return
-
-    #     def form_node(node: self.Node):
-    #         out.write(f'"{node.key}\\nbfactor: {self._calc_bfactor(node)}\\nheight: {node.height}"')
-
-    #     if root.left:
-    #         out.write("    ")
-    #         form_node(root)
-    #         out.write(" -> ")
-    #         form_node(root.left)
-    #         out.write(";\n")
-    #         self._generate_DOT(root.left, out)
-
-    #     if root.right:
-    #         out.write("    ")
-    #         form_node(root)
-    #         out.write(" -> ")
-    #         form_node(root.right)
-    #         out.write(";\n")
-    #         self._generate_DOT(root.right, out)
-
-    # def _generate_DOT_file(self, root: Optional[Node]) -> None:
-    #     """Generate .dot file for tree"""
-    #     with open("avl_tree.dot", "w") as out:
-    #         out.write("digraph AVLTree {\n")
-    #         out.write("    node [fontname=\"Liberation Mono\"];\n")
-
-    #         if root is None:
-    #             out.write("    null;\n")
-    #         elif root.left is None and root.right is None:
-    #             out.write(f"    {root.key};\n")
-    #         else:
-    #             self._generate_DOT(root, out)
-
-    #         out.write("}\n")
-
     #===============#
     # MAGIC METHODS #
     #===============#
@@ -438,6 +421,55 @@ class AVL:
         found_node = self._run_search(self._root, key)
 
         return True if found_node is not None else False
+
+    def __bool__(self):
+        """Check on True/False"""
+        return False if self._root is None else True
+
+    # def _merge_trees(self, first: Optional[Node], second: Optional[Node]) -> Optional[Node]:
+    #     """Merge two trees"""
+
+    #     # Condition to process four possible cases:
+    #     #  1. first is None     and second is None     => return None
+    #     #  2. first is not None and second is None     => return first
+    #     #  3. first is None     and second is not None => return second
+    #     #  4. first is not None and second is not None => continue execution 
+    #     #
+    #     if first is None or second is None:
+    #         return first if second is None else second
+
+    #     if first.key > second.key:
+    #         self._merge_trees(first.left. second)
+    #     elif first.key < second.key:
+    #         self._merge_trees(first.right, second)
+    #     else:
+
+    def __add__(self, other: Optional['AVL']) -> Optional['AVL']:
+        """+ operator"""
+        new_avl = copy.deepcopy(self)
+
+        if other is None:
+            return new_avl
+
+        # Get pointers to tree roots
+        # copy_current  = new_avl.raw()
+        # other_current = other.raw()
+        # self._merge_trees(copy_current, other_current)
+
+        other_keys = other.data(order="in")
+
+        for key in other_keys:
+            new_avl.insert(key)
+
+        return new_avl
+    
+    def __deepcopy__(self, memo={}) -> 'AVL':
+        """Deepcopy of tree"""
+        new_tree = AVL()
+        new_tree._root = self._run_deepcopy(self._root)
+        new_tree._size = self._size
+
+        return new_tree
 
 if __name__ == "__main__":
     avl = AVL()
@@ -458,6 +490,6 @@ if __name__ == "__main__":
     
     print(-10 in avl)
 
-    print(len(avl))
+    print(copy.deepcopy(avl))
 
-    # avl.generate_DOT_file()
+    print(len(avl))
